@@ -1,4 +1,4 @@
 # userscripts
 Tampermonkey/Greasemonkey userscripts i use
 
-'le test
+[Primuss Notenbekanntgabe](/ReDiGermany/userscripts/blob/main/notenbekanntgabe.user.js)
