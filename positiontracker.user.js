@@ -2,10 +2,10 @@
 // @name         WeWash Position Tracker
 // @namespace    https://github.com/ReDiGermany/userscripts
 // @version      0.1
-// @description  Tracks the current Position in queue into the title
+// @description  Tracks the current Position in queue
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://app.we-wash.com/n/home/overview
-// @icon         https://www.google.com/s2/favicons?domain=we-wash.com
+// @icon         https://app.we-wash.com/favicon.ico
 // @grant        none
 // @updateURL    https://github.com/ReDiGermany/userscripts/blob/main/positiontracker.user.js
 // ==/UserScript==
