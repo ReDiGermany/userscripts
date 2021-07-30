@@ -5,3 +5,4 @@ Gebraucht wird dafür entweder [Greasemonkey](https://addons.mozilla.org/de/fire
 
 * [Primuss Notenbekanntgabe](https://github.com/ReDiGermany/userscripts/raw/main/notenbekanntgabe.user.js)
 * [Foodtracker Title Metainfo](https://github.com/ReDiGermany/userscripts/raw/main/foodtracker.user.js)
+* [Positiontracker Title Metainfo](https://github.com/ReDiGermany/userscripts/raw/main/positiontracker.user.js)
