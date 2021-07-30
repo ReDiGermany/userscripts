@@ -7,7 +7,7 @@
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
 // @icon         https://www3.primuss.de/favicon.ico
 // @grant        none
-// @updateURL    https://github.com/ReDiGermany/userscripts/blob/main/notenbekanntgabe.js
+// @updateURL    https://github.com/ReDiGermany/userscripts/blob/main/notenbekanntgabe.user.js
 // ==/UserScript==
 
 class PrimussNotenbekanntgabe {
