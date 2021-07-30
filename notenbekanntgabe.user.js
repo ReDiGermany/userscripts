@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      2.9
+// @version      2.0
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
