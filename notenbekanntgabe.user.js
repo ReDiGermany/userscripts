@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      3.1
+// @version      3.2
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -86,6 +86,8 @@ class PrimussNotenbekanntgabe {
             var ectsItem = 1;
             var td = table_rows[i].querySelectorAll("td");
             var subjectName = td[2].innerHTML;
+            var manual = false;
+
             //console.log(subjectName,ects.hasOwnProperty(subjectName),ects[subjectName])
             if(ects.hasOwnProperty(subjectName)){
                 ectsItem = ects[subjectName]
@@ -97,7 +99,7 @@ class PrimussNotenbekanntgabe {
                     notFound.push(subjectName);
                     weightedPossible = false;
                 }
-                td[td.length-2].innerHTML += "<input onchange='(function(t){ console.log(\"test\",t.value); localStorage.setItem(\""+subjectName+"\",t.value); })(this);return false;' name='"+subjectName+"' class='redi_input' placeholder='ects' style='width: 30px' type='text' value='"+(localECTS==null?"":localECTS)+"' />";
+                manual = true;
             }
 
             var grade = td[td.length-2].getElementsByTagName("b")[0];
@@ -124,6 +126,9 @@ class PrimussNotenbekanntgabe {
                     grade.innerHTML += " <small class='redi_weighted_grade' style='opacity: .5'>(gewichtet: "+grd*ectsItem+" | ects: "+ectsItem+")</small>";
                 }catch(e){}
                 number_found_grades++;
+                if(manual){
+                    td[td.length-2].innerHTML += "<input onchange='(function(t){ console.log(\"test\",t.value); localStorage.setItem(\""+subjectName+"\",t.value); })(this);return false;' name='"+subjectName+"' class='redi_input' placeholder='ects' style='width: 30px' type='text' value='"+(localECTS==null?"":localECTS)+"' />";
+                }
             } else grade.setAttribute("style","opacity: 0");
         }
 
@@ -166,7 +171,7 @@ class PrimussNotenbekanntgabe {
         const t = this;
         this.getECTS(function(ects){
             t.show(ects)
-            setInterval(function(){ t.show(ects) },5*1000);
+            setInterval(function(){ t.show(ects) },15*1000);
         })
     }
 }
