@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      2.5
+// @version      3.0
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -55,11 +55,12 @@ class PrimussNotenbekanntgabe {
             var rows = table.querySelectorAll("tr");
 
             for(var i=1;i<rows.length;i++){
-                var td = rows[i].querySelectorAll("td");
+                var td = rows[i].querySelectorAll("td,th");
                 try{
-                    var ects = parseFloat(td[td.length-1].innerHTML.replace(/,/,"."));
-                    if(ects!="NaN"){
-                        ret[td[0].innerHTML] = ects;
+                    var grade = parseFloat(td[td.length-2].innerText.replace(/,/,"."));
+                    var ects = parseFloat(td[td.length-1].innerText.replace(/,/,"."));
+                    if(isNaN(grade)){
+                        if(!isNaN(ects)) ret[td[0].innerText] = ects;
                     }
                 }catch(e){}
             }
@@ -79,15 +80,24 @@ class PrimussNotenbekanntgabe {
         var ects_total = 0;
         var unweigted_total_grades = 0;
         var weightedPossible = true;
+        var notFound = [];
 
         for(var i=0;i<table_rows.length;i++){
             var ectsItem = 1;
             var td = table_rows[i].querySelectorAll("td");
             var subjectName = td[2].innerHTML;
             //console.log(subjectName,ects.hasOwnProperty(subjectName),ects[subjectName])
-            if(ects.hasOwnProperty(subjectName)) ectsItem = ects[subjectName]
-            else{
-                weightedPossible = false;
+            if(ects.hasOwnProperty(subjectName)){
+                ectsItem = ects[subjectName]
+            }else{
+                var localECTS = localStorage.getItem(subjectName);
+                if(localECTS!=null){
+                    ectsItem = parseFloat(localECTS.replace(/,/,'.'))
+                }else{
+                    notFound.push(subjectName);
+                    weightedPossible = false;
+                }
+                td[td.length-2].innerHTML += "<input onchange='(function(t){ console.log(\"test\",t.value); localStorage.setItem(\""+subjectName+"\",t.value); })(this);return false;' name='"+subjectName+"' class='redi_input' placeholder='ects' style='width: 30px' type='text' value='"+(localECTS==null?"":localECTS)+"' />";
             }
 
             var grade = td[td.length-2].getElementsByTagName("b")[0];
@@ -97,6 +107,11 @@ class PrimussNotenbekanntgabe {
             if(grade.innerHTML=="erfolgreich"){
                 number_total_grades--;
                 for(var j=0;j<td.length;j++) td[j].setAttribute("style","background: rgba(0,0,0,.1)");
+            }
+
+            var inputs = document.querySelectorAll(".redi_input");
+            for(var inpi = 0;inpi<inputs.length;inpi++){
+                inputs[inpi].addEventListener("change",function(){ console.log("change") },false);
             }
 
             // Adding graded info to HTML and calculating average grades
@@ -111,6 +126,8 @@ class PrimussNotenbekanntgabe {
                 number_found_grades++;
             } else grade.setAttribute("style","opacity: 0");
         }
+
+        console.log("notFound",notFound)
 
         var d = new Date().toLocaleTimeString();
 
@@ -149,12 +166,11 @@ class PrimussNotenbekanntgabe {
         const t = this;
         this.getECTS(function(ects){
             t.show(ects)
-            setInterval(function(){ t.show(ects) },5*1000);
+            //setInterval(function(){ t.show(ects) },5*1000);
         })
     }
 }
 
 (function() {
-    'use strict';
     new PrimussNotenbekanntgabe();
 })();
