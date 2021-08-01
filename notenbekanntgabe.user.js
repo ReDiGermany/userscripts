@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      2.0
+// @version      2.1
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
 // @icon         https://www3.primuss.de/favicon.ico
 // @grant        none
-// @updateURL    https://github.com/ReDiGermany/userscripts/blob/main/notenbekanntgabe.user.js
+// @updateURL    https://github.com/ReDiGermany/userscripts/blob/main/notenbekanntgabe.js
 // ==/UserScript==
 
 class PrimussNotenbekanntgabe {
@@ -77,6 +77,8 @@ class PrimussNotenbekanntgabe {
         var table_rows = document.querySelectorAll(".table2 tbody:last-of-type tr");
         var weighted_grade = 0;
         var ects_total = 0;
+        var unweigted_total_grades = 0;
+        var weightedPossible = true;
 
         for(var i=0;i<table_rows.length;i++){
             var ectsItem = 1;
@@ -84,6 +86,7 @@ class PrimussNotenbekanntgabe {
             var subjectName = td[2].innerHTML;
             //console.log(subjectName,ects.hasOwnProperty(subjectName),ects[subjectName])
             if(ects.hasOwnProperty(subjectName)) ectsItem = ects[subjectName]
+            else weightedPossible = false;
 
             var grade = td[td.length-2].getElementsByTagName("b")[0];
             number_total_grades++;
@@ -98,19 +101,33 @@ class PrimussNotenbekanntgabe {
             if(grade.innerHTML!="Korrektur noch nicht abgeschlossen" && grade.innerHTML!="erfolgreich"){
                 try{
                     var grd = parseFloat(grade.innerText.replace(/,/,'.'));
+                    unweigted_total_grades += grd;
                     ects_total += ectsItem;
                     weighted_grade += grd*ectsItem;
-                    grade.innerHTML += " <small style='opacity: .5'>(gewichtet: "+grd*ectsItem+" | ects: "+ectsItem+")</small>";
+                    grade.innerHTML += " <small class='redi_weighted_grade' style='opacity: .5'>(gewichtet: "+grd*ectsItem+" | ects: "+ectsItem+")</small>";
                 }catch(e){}
                 number_found_grades++;
             } else grade.setAttribute("style","opacity: 0");
         }
 
-        // Adding meta info
         var d = new Date().toLocaleTimeString();
+
+        document.querySelectorAll(".table2 tbody:last-of-type")[0].innerHTML +=
+            '<tr><td colspan="5">Last Check: '+d+'</td><td>Ungewichtet: '
+            +(unweigted_total_grades/number_found_grades)
+            +'<b class="redi_weighted_grade"><br />Gewichtet: '
+            +(weighted_grade/ects_total)
+            +'</b></td><td></td></tr>';
+
+        if(!weightedPossible){
+            var d1 = document.getElementsByClassName("redi_weighted_grade");
+            for(var i1=0;i<d1.length;i1++){
+                d1[i1].remove();
+            }
+        }
+
+        // Adding meta info
         document.title = number_found_grades+'/'+number_total_grades+' ('+d+') ('+(weighted_grade/ects_total)+') :: Primuss';
-        document.getElementById('Legende').innerHTML += d;
-        document.getElementById('Legende').setAttribute("style","position: absolute;");
     }
 
     show(ects){
@@ -125,7 +142,7 @@ class PrimussNotenbekanntgabe {
         const t = this;
         this.getECTS(function(ects){
             t.show(ects)
-            setInterval(function(){ t.show(ects) },5*1000);
+            //setInterval(function(){ t.show(ects) },5*1000);
         })
     }
 }
