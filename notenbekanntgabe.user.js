@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      3.6
+// @version      3.7
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -119,7 +119,7 @@ class PrimussNotenbekanntgabe {
         manual_box: (subjectName,localECTS)=>{
             if(localStorage.getItem("showECTSBoxes")=='1')
             return `<input
-            onchange='(function(t){ localStorage.setItem(\"${subjectName}\",t.value); })(this);return false;'
+            onchange='(function(t){ localStorage.setItem(t.name,t.value) })(this);return false;'
             name='${subjectName}'
             class='redi_input'
             placeholder='ects'
@@ -181,7 +181,7 @@ class PrimussNotenbekanntgabe {
             }catch(e){}
             this.number_found_grades++;
             if(manual){
-                td[td.length-2].innerHTML += this.html.manual_box(subjectName,localECTS);
+                td[td.length-2].innerHTML += this.html.manual_box(td[2].innerText,localECTS);
             }
         } else grade.setAttribute("style","opacity: 0");
     }
@@ -192,13 +192,6 @@ class PrimussNotenbekanntgabe {
             for(let j=0;j<td.length;j++){
                 td[j].setAttribute("style","background: rgba(0,0,0,.1)");
             }
-        }
-    }
-
-    addHooks(){
-        const inputs = document.querySelectorAll(".redi_input");
-        for(let inpi = 0;inpi<inputs.length;inpi++){
-            inputs[inpi].addEventListener("change",function(){ console.log("change") },false);
         }
     }
 
@@ -230,9 +223,7 @@ class PrimussNotenbekanntgabe {
             // Adding graded info to HTML and calculating average grades
             this.gradeIfy(gradeable,grade,manual,localECTS,ectsItem,td)
 
-            this.addHooks();
         }
-
         this.hideIfUnweighted();
         this.showSummery();
     }
@@ -243,7 +234,7 @@ class PrimussNotenbekanntgabe {
 
         // Adding meta info
         let grade = (this.weighted_grade/this.ects_total);
-        if(!this.weightedPossible) grade = (this-unweigted_total_grades/this.number_found_grades);
+        if(!this.weightedPossible) grade = (this.unweigted_total_grades/this.number_found_grades);
         document.title = `${this.number_found_grades}/${this.number_total_grades} (${date}) (${grade}) :: Primuss`;
     }
 
