@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      3.2
+// @version      3.3
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -87,6 +87,8 @@ class PrimussNotenbekanntgabe {
             var td = table_rows[i].querySelectorAll("td");
             var subjectName = td[2].innerHTML;
             var manual = false;
+            var grade = td[td.length-2].getElementsByTagName("b")[0];
+            var gradeable = grade.innerHTML!="Korrektur noch nicht abgeschlossen" && grade.innerHTML!="erfolgreich";
 
             //console.log(subjectName,ects.hasOwnProperty(subjectName),ects[subjectName])
             if(ects.hasOwnProperty(subjectName)){
@@ -96,13 +98,14 @@ class PrimussNotenbekanntgabe {
                 if(localECTS!=null){
                     ectsItem = parseFloat(localECTS.replace(/,/,'.'))
                 }else{
-                    notFound.push(subjectName);
-                    weightedPossible = false;
+                    if(gradeable){
+                        notFound.push(subjectName);
+                        weightedPossible = false;
+                    }
                 }
                 manual = true;
             }
 
-            var grade = td[td.length-2].getElementsByTagName("b")[0];
             number_total_grades++;
 
             // Outline admission requirements
@@ -117,7 +120,7 @@ class PrimussNotenbekanntgabe {
             }
 
             // Adding graded info to HTML and calculating average grades
-            if(grade.innerHTML!="Korrektur noch nicht abgeschlossen" && grade.innerHTML!="erfolgreich"){
+            if(gradeable){
                 try{
                     var grd = parseFloat(grade.innerText.replace(/,/,'.'));
                     unweigted_total_grades += grd;
@@ -131,8 +134,6 @@ class PrimussNotenbekanntgabe {
                 }
             } else grade.setAttribute("style","opacity: 0");
         }
-
-        console.log("notFound",notFound)
 
         var d = new Date().toLocaleTimeString();
 
