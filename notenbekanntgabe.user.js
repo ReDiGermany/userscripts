@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      3.4
+// @version      3.5
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -47,6 +47,7 @@ class PrimussNotenbekanntgabe {
         }
         http.send(params);
     }
+    oldOnes = {}
 
     // Parses the HTML table to a object of ects {name:ects}
     parseECTS(html){
@@ -54,11 +55,17 @@ class PrimussNotenbekanntgabe {
         const table = html.querySelectorAll("table")[5];
         const rows = table.querySelectorAll("tr");
 
+        this.oldOnes = {}
+
         for(let i=1;i<rows.length;i++){
             const td = rows[i].querySelectorAll("td,th");
             try{
                 const grade = td[td.length-2].numberIfy();
+                const grade2= td[td.length-5].numberIfy();
                 const ects = td[td.length-1].numberIfy();
+                if(!isNaN(grade) && !isNaN(ects)){
+                    this.oldOnes[td[0].innerText] = {grade:grade2,ects}
+                }
                 if(isNaN(grade) && !isNaN(ects)){
                     ret[td[0].innerText] = ects;
                 }
@@ -76,9 +83,7 @@ class PrimussNotenbekanntgabe {
             FH: this.getInputValueByName("FH"),
             Portal: 1
         }, html => {
-            console.log("before",this.ects)
             this.ects = this.parseECTS(html);
-            console.log("after",this.ects)
             callback();
         })
     }
@@ -107,9 +112,12 @@ class PrimussNotenbekanntgabe {
     notFound = [];
     html = {
         weighted_grade: (grade,ectsItem)=>{
+            if(localStorage.getItem("showECTSInfo")=='1')
             return ` <small class='redi_weighted_grade' style='opacity: .5'>(gewichtet: ${grade*ectsItem} | ects: ${ectsItem})</small>`
+            return "";
         },
         manual_box: (subjectName,localECTS)=>{
+            if(localStorage.getItem("showECTSBoxes")=='1')
             return `<input
             onchange='(function(t){ localStorage.setItem(\"${subjectName}\",t.value); })(this);return false;'
             name='${subjectName}'
@@ -118,26 +126,49 @@ class PrimussNotenbekanntgabe {
             style='width: 30px'
             type='text'
             value='${localECTS==null?"":localECTS}' />`
+            return '';
         },
         table_sum: (d)=>{
+            let total_grades = this.weighted_grade;
+            let total_ects = this.ects_total;
+            let before_grades = 0;
+            let before_ects = 0;
+            for(let k in this.oldOnes){
+                const cgrade = this.oldOnes[k].grade*this.oldOnes[k].ects;
+                const cects = this.oldOnes[k].ects;
+                before_grades += cgrade;
+                before_ects += cects;
+                total_grades += cgrade;
+                total_ects += cects;
+            }
+            const unweighted = this.unweigted_total_grades/this.number_found_grades;
+            const weighted = this.weighted_grade/this.ects_total;
             return `<tr>
                 <td colspan="5">
                     Last Check: ${d}
                 </td>
                 <td>
-                    Ungewichtet: ${this.unweigted_total_grades/this.number_found_grades}
-                    <b class="redi_weighted_grade"><br />Gewichtet: ${this.weighted_grade/this.ects_total}</b>
+                    <b>Aktuell:</b> ${unweighted!=weighted?`<br />
+                    Ungewichtet: ${this.number_format(unweighted)}
+                    <b class="redi_weighted_grade"><br />Gewichtet: ${this.number_format(weighted)}</b><hr />`:this.number_format(weighted)+"<br />"}
+                    Vorher: ${this.number_format(before_grades/before_ects)}<br />
+                    Zusammen: ${this.number_format(total_grades/total_ects)}
                 </td>
                 <td></td>
             </tr>`
         }
     };
 
+    number_format(input){
+        return parseInt(input*1000)/1000;
+    }
+
     number_found_grades = 0;
     weighted_grade = 0;
     ects_total = 0;
     unweigted_total_grades = 0;
     number_total_grades=0;
+    old_grade=0;
 
     gradeIfy(gradeable,grade,manual,localECTS,ectsItem){
         if(gradeable){
@@ -227,14 +258,24 @@ class PrimussNotenbekanntgabe {
     }
 
     show(){
+        const t = this;
         var L = document.getElementById("Notenspiegel");
         if(L==null || (L!=null && (L.innerHTML=='' || L.style.display=="none"))){
             shownoten();
-            setTimeout(()=>{ this.parseData() },1000)
+            setTimeout(()=>{
+                this.parseData()
+                const featureBox = document.querySelector(".featurebox");
+                featureBox.innerHTML = "Zeige ECTS Boxen: <input type='checkbox' name='showECTSBoxes' "+(localStorage.getItem("showECTSBoxes")=="1"?"checked":"")+" /><br />"+
+                    "Zeige ECTS Informationen: <input type='checkbox' name='showECTSInfo' "+(localStorage.getItem("showECTSInfo")=="1"?"checked":"")+" />"+featureBox.innerHTML;
+                document.querySelector("[name='showECTSBoxes']").addEventListener("change",function(){ localStorage.setItem("showECTSBoxes",this.checked?1:0); t.show() })
+                document.querySelector("[name='showECTSInfo']").addEventListener("change",function(){ localStorage.setItem("showECTSInfo",this.checked?1:0); t.show() })
+            },1000)
         }
     }
 
     constructor() {
+        if(localStorage.getItem("showECTSBoxes")==null) localStorage.setItem("showECTSBoxes",1);
+        if(localStorage.getItem("showECTSInfo")==null) localStorage.setItem("showECTSInfo",1);
         this.getECTS(()=>{
             this.show()
             setInterval(()=>{ this.show() },15*1000);
