@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      3.5
+// @version      3.6
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -170,7 +170,7 @@ class PrimussNotenbekanntgabe {
     number_total_grades=0;
     old_grade=0;
 
-    gradeIfy(gradeable,grade,manual,localECTS,ectsItem){
+    gradeIfy(gradeable,grade,manual,localECTS,ectsItem,td){
         if(gradeable){
             try{
                 const grd = grade.numberIfy();
@@ -228,7 +228,7 @@ class PrimussNotenbekanntgabe {
             this.checkAdmission(grade,td);
 
             // Adding graded info to HTML and calculating average grades
-            this.gradeIfy(gradeable,grade,manual,localECTS,ectsItem)
+            this.gradeIfy(gradeable,grade,manual,localECTS,ectsItem,td)
 
             this.addHooks();
         }
