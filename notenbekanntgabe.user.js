@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      4
+// @version      4.1
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -43,6 +43,11 @@ class PrimussNotenbekanntgabe {
         temp.innerHTML = http.responseText;
 
         if (callback != undefined) callback(temp);
+      } else if (http.readyState == 4 && http.status == 500) {
+        const date = new Date().toLocaleTimeString();
+        document
+          .getElementById("content-body")
+          .prepend("Server returned 500 error! " + date);
       }
     };
     http.send(params);
@@ -282,8 +287,8 @@ class PrimussNotenbekanntgabe {
       (L != null && (L.innerHTML == "" || L.style.display == "none"))
     ) {
       //shownoten();
-      setTimeout(() => {
-        this.loadBoard();
+      //setTimeout(()=>{
+      this.loadBoard(() => {
         this.parseData();
         const featureBox = this.document.querySelector(".featurebox");
         featureBox.innerHTML =
@@ -306,15 +311,18 @@ class PrimussNotenbekanntgabe {
             localStorage.setItem("showECTSInfo", this.checked ? 1 : 0);
             t.show();
           });
-        console.log(this.document);
+        //console.log(this.document)
         document.getElementById("content-body").innerHTML = "";
         document.getElementById("content-body").append(this.document);
-      }, 1000);
+      });
+      //},1000)
+    } else {
+      console.log("Hat Notenspiegel");
     }
   }
 
   // Loading current board
-  loadBoard() {
+  loadBoard(c) {
     const url = `/cgi-bin/pg_Notenbekanntgabe/showajax.pl?Language=${
       this.language
     }&Session=${this.session}&Poison=${this.poison}&User=${this.user}&FH=${
@@ -323,8 +331,16 @@ class PrimussNotenbekanntgabe {
       this.viewSem
     }&_=${new Date().getTime()}&a=1`;
     $.get(url, (data) => {
-      this.document = document.createElement("div");
-      this.document.innerHTML = data;
+      if (data == "") {
+        const date = new Date().toLocaleTimeString();
+        document
+          .getElementById("content-body")
+          .prepend("Server returned 500 error! " + date);
+      } else {
+        this.document = document.createElement("div");
+        this.document.innerHTML = data;
+      }
+      c();
     });
   }
 
@@ -350,7 +366,7 @@ class PrimussNotenbekanntgabe {
     this.fh = js_text.replace(/(.*)FH=([^\&]*)(.*)/gim, "$2");
     this.accept = js_text.replace(/(.*)Accept=([^\&]*)(.*)/gim, "$2");
     //this.viewSem = js_text.replace(/(.*)viewSem=([^\&]*)(.*)/igm,'$2');
-    this.loadBoard();
+    //this.loadBoard()
 
     if (localStorage.getItem("showECTSBoxes") == null)
       localStorage.setItem("showECTSBoxes", 1);
