@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      4.1
+// @version      4.1.1
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -181,7 +181,7 @@ class PrimussNotenbekanntgabe {
   };
 
   number_format(input) {
-    return parseInt(input * 1000) / 1000;
+    return (parseInt(input * 1000) / 1000) || 0;
   }
 
   number_found_grades = 0;
@@ -265,9 +265,10 @@ class PrimussNotenbekanntgabe {
 
     // Adding meta info
     let grade = this.weighted_grade / this.ects_total;
-    if (!this.weightedPossible)
+    if (!this.weightedPossible){
       grade = this.unweigted_total_grades / this.number_found_grades;
-    document.title = `${this.number_found_grades}/${this.number_total_grades} (${date}) (${grade}) :: Primuss`;
+    }
+    document.title = `${this.number_found_grades}/${this.number_total_grades} (${date}) (${this.number_format(grade)}) :: Primuss`;
   }
 
   hideIfUnweighted() {
