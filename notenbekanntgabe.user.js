@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      4.1.1
+// @version      4.2
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -157,25 +157,26 @@ class PrimussNotenbekanntgabe {
       const unweighted = this.unweigted_total_grades / this.number_found_grades;
       const weighted = this.weighted_grade / this.ects_total;
       return `<tr>
-                <td colspan="5">
+                <td colspan="2">
                     Last Check: ${d}
                 </td>
                 <td>
-                    <b>Aktuell:</b> ${
+                    ${
                       unweighted != weighted
-                        ? `<br />
+                        ? `
                     Ungewichtet: ${this.number_format(unweighted)}
                     <b class="redi_weighted_grade"><br />Gewichtet: ${this.number_format(
                       weighted
-                    )}</b><hr />`
+                    )}</b>`
                         : this.number_format(weighted) + "<br />"
                     }
+                </td>
+                <td style="width: 120px">
                     Vorher: ${this.number_format(
                       before_grades / before_ects
                     )}<br />
                     Zusammen: ${this.number_format(total_grades / total_ects)}
                 </td>
-                <td></td>
             </tr>`;
     },
   };
@@ -340,6 +341,21 @@ class PrimussNotenbekanntgabe {
       } else {
         this.document = document.createElement("div");
         this.document.innerHTML = data;
+        var tr = this.document.getElementsByClassName("table2")[0].getElementsByTagName("tr");
+        for(let i=0;i<tr.length;i++){
+            const th = tr[i].getElementsByTagName("th");
+            if(th.length){
+                th[4].remove();
+                th[1].remove();
+                th[0].remove();
+            }
+            const td = tr[i].getElementsByTagName("td");
+            if(td.length){
+                td[4].remove();
+                td[1].remove();
+                td[0].remove();
+            }
+        }
       }
       c();
     });
