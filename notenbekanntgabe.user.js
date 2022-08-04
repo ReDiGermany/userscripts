@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      4.2
+// @version      4.2.1
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
@@ -78,6 +78,8 @@ class PrimussNotenbekanntgabe {
         }
       } catch (e) {}
     }
+      console.info("ECTS of current modules",ret)
+      console.info("Old Grades",this.oldOnes)
     return ret;
   }
 
@@ -198,6 +200,7 @@ class PrimussNotenbekanntgabe {
         const grd = grade.numberIfy();
         this.unweigted_total_grades += grd;
         this.ects_total += ectsItem;
+          console.log({grd,ectsItem})
         this.weighted_grade += grd * ectsItem;
         grade.innerHTML += this.html.weighted_grade(grd, ectsItem);
       } catch (e) {}
@@ -238,11 +241,16 @@ class PrimussNotenbekanntgabe {
 
     for (let i = 0; i < table_rows.length; i++) {
       const td = table_rows[i].querySelectorAll("td");
-      const subjectName = td[2].innerHTML;
+      const subjectName = td[0].innerHTML;
       const grade = td[td.length - 2].getElementsByTagName("b")[0];
+        //console.log({subjectName,grade:grade.innerHTML})
       const gradeable =
         grade.innerHTML != "Korrektur noch nicht abgeschlossen" &&
+        grade.innerHTML != "nicht teilgenommen" &&
         grade.innerHTML != "erfolgreich";
+
+        if(grade.innerHTML == "nicht teilgenommen")
+        table_rows[i].style.opacity = .3
 
       const [ectsItem, manual, localECTS] = this.getSubjectECTS(
         subjectName,
@@ -263,6 +271,7 @@ class PrimussNotenbekanntgabe {
     const date = new Date().toLocaleTimeString();
     this.document.querySelectorAll(".table2 tbody:last-of-type")[0].innerHTML +=
       this.html.table_sum(date);
+      console.log(this)
 
     // Adding meta info
     let grade = this.weighted_grade / this.ects_total;
