@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         Notenbekanntgabe
 // @namespace    https://github.com/ReDiGermany/userscripts
-// @version      4.2.2
+// @version      4.3
 // @description  Refreshes the "Notenbekanntgabe" and adds a quick summery including the weighted average grade in the title.
 // @author       Max 'ReDiGermany' Kruggel
 // @match        https://www3.primuss.de/cgi-bin/pg_Notenbekanntgabe/index.pl
 // @icon         https://www3.primuss.de/favicon.ico
 // @grant        none
 // @updateURL    https://github.com/ReDiGermany/userscripts/raw/main/notenbekanntgabe.user.js
+// @downloadURL    https://github.com/ReDiGermany/userscripts/raw/main/notenbekanntgabe.user.js
 // ==/UserScript==
 
 HTMLElement.prototype.numberIfy = function () {
@@ -78,8 +79,8 @@ class PrimussNotenbekanntgabe {
         }
       } catch (e) {}
     }
-      console.info("ECTS of current modules",ret)
-      console.info("Old Grades",this.oldOnes)
+    console.info("ECTS of current modules", ret);
+    console.info("Old Grades", this.oldOnes);
     return ret;
   }
 
@@ -184,7 +185,7 @@ class PrimussNotenbekanntgabe {
   };
 
   number_format(input) {
-    return (parseInt(input * 1000) / 1000) || 0;
+    return parseInt(input * 1000) / 1000 || 0;
   }
 
   number_found_grades = 0;
@@ -193,15 +194,17 @@ class PrimussNotenbekanntgabe {
   unweigted_total_grades = 0;
   number_total_grades = 0;
   old_grade = 0;
+  failed = 0;
 
   gradeIfy(gradeable, grade, manual, localECTS, ectsItem, td) {
     if (gradeable) {
       try {
         const grd = grade.numberIfy();
-        this.unweigted_total_grades += grd;
-        this.ects_total += ectsItem;
-          console.log({grd,ectsItem})
-        this.weighted_grade += grd * ectsItem;
+        if (grd < 5) {
+          this.unweigted_total_grades += grd;
+          this.ects_total += ectsItem;
+          this.weighted_grade += grd * ectsItem;
+        }
         grade.innerHTML += this.html.weighted_grade(grd, ectsItem);
       } catch (e) {}
       this.number_found_grades++;
@@ -219,6 +222,12 @@ class PrimussNotenbekanntgabe {
       this.number_total_grades--;
       for (let j = 0; j < td.length; j++) {
         td[j].setAttribute("style", "background: rgba(0,0,0,.1)");
+      }
+    }
+    if (grade.innerHTML == "5,0") {
+      this.failed++;
+      for (let j = 0; j < td.length; j++) {
+        td[j].setAttribute("style", "background: rgba(255,0,0,.1)");
       }
     }
     if (grade.innerHTML == "nicht teilgenommen") {
@@ -246,14 +255,14 @@ class PrimussNotenbekanntgabe {
       const td = table_rows[i].querySelectorAll("td");
       const subjectName = td[0].innerHTML;
       const grade = td[td.length - 2].getElementsByTagName("b")[0];
-        //console.log({subjectName,grade:grade.innerHTML})
+      //console.log({subjectName,grade:grade.innerHTML})
       const gradeable =
         grade.innerHTML != "Korrektur noch nicht abgeschlossen" &&
         grade.innerHTML != "nicht teilgenommen" &&
         grade.innerHTML != "erfolgreich";
 
-        if(grade.innerHTML == "nicht teilgenommen")
-        table_rows[i].style.opacity = .3
+      if (grade.innerHTML == "nicht teilgenommen")
+        table_rows[i].style.opacity = 0.3;
 
       const [ectsItem, manual, localECTS] = this.getSubjectECTS(
         subjectName,
@@ -274,14 +283,16 @@ class PrimussNotenbekanntgabe {
     const date = new Date().toLocaleTimeString();
     this.document.querySelectorAll(".table2 tbody:last-of-type")[0].innerHTML +=
       this.html.table_sum(date);
-      console.log(this)
+    console.log(this);
 
     // Adding meta info
     let grade = this.weighted_grade / this.ects_total;
-    if (!this.weightedPossible){
+    if (!this.weightedPossible) {
       grade = this.unweigted_total_grades / this.number_found_grades;
     }
-    document.title = `${this.number_found_grades}/${this.number_total_grades} (${date}) (${this.number_format(grade)}) :: Primuss`;
+    document.title = `${this.number_found_grades}/${this.number_total_grades} ${
+      this.failed > 0 ? "!" : ""
+    } (${date}) (${this.number_format(grade)}) :: Primuss`;
   }
 
   hideIfUnweighted() {
@@ -353,20 +364,22 @@ class PrimussNotenbekanntgabe {
       } else {
         this.document = document.createElement("div");
         this.document.innerHTML = data;
-        var tr = this.document.getElementsByClassName("table2")[0].getElementsByTagName("tr");
-        for(let i=0;i<tr.length;i++){
-            const th = tr[i].getElementsByTagName("th");
-            if(th.length){
-                th[4].remove();
-                th[1].remove();
-                th[0].remove();
-            }
-            const td = tr[i].getElementsByTagName("td");
-            if(td.length){
-                td[4].remove();
-                td[1].remove();
-                td[0].remove();
-            }
+        var tr = this.document
+          .getElementsByClassName("table2")[0]
+          .getElementsByTagName("tr");
+        for (let i = 0; i < tr.length; i++) {
+          const th = tr[i].getElementsByTagName("th");
+          if (th.length) {
+            th[4].remove();
+            th[1].remove();
+            th[0].remove();
+          }
+          const td = tr[i].getElementsByTagName("td");
+          if (td.length) {
+            td[4].remove();
+            td[1].remove();
+            td[0].remove();
+          }
         }
       }
       c();
